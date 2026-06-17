@@ -1,0 +1,18 @@
+/node_modules
+/.next
+/out
+/build
+npm-debug.log*
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+.env
+.env*.local
+
+# Prisma
+/lib/generated
+*.db
+*.db-journal
+
+# Local Claude Code settings
+.claude/settings.local.json

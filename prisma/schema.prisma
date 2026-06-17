@@ -1,0 +1,61 @@
+// Prisma schema for the TennisCort backend.
+// SQLite for local dev — switch `provider`/`url` to Postgres later without
+// changing application code.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  bookings     Booking[]
+  sessions     Session[]
+}
+
+// Server-side session: an opaque token (stored in an HTTP-only cookie) mapped
+// to a user, with an expiry. Lets us look up the current user on every request
+// without trusting anything the client sends.
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Court {
+  id       String    @id
+  name     String
+  location String
+  surface  String
+  bookings Booking[]
+}
+
+model Booking {
+  id          String   @id @default(cuid())
+  court       Court    @relation(fields: [courtId], references: [id])
+  courtId     String
+  // ISO instant for the start of the booked hour (UTC, e.g. 2026-06-17T17:00:00.000Z)
+  dateTimeISO String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  // Denormalised display name captured at booking time (for "Booked by …").
+  userName    String
+  createdAt   DateTime @default(now())
+
+  // One booking per court per time — enforces no double-booking at the DB level.
+  @@unique([courtId, dateTimeISO])
+  @@index([userId])
+}
